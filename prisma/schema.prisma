@@ -1,0 +1,151 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole @default(USER)
+  accounts      Account[]
+  isTwoFactorEnabled Boolean @default(false)
+  twoFactorConfirmation TwoFactorConfirmation?
+  
+  // Relacionamento com os clientes (Costumers) que o usuário representa
+  // customers     Customer[] @relation("UserCustomer") 
+
+  // Relacionamento com os pedidos (Orders) realizados por este representante
+  // orders               Order[]
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  id String @id @default(cuid())
+  email String
+  token String @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+  email String
+  token String @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorToken {
+  id String @id @default(cuid())
+  email String
+  token String @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorConfirmation {
+  id String @id @default(cuid())
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+}
+
+model Product {
+  id          String   @id @unique @default(cuid())
+  code        String   @unique
+  name        String
+  description String
+  image       String?
+  price       Decimal @db.Decimal(10, 2)  
+
+  cartItems CartItems[]
+  images    ProductImage[]  // 🔗 Relacionamento: Um Produto tem várias imagens
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  url       String
+  key       String   @unique
+  productId String?  @unique(map: "UniqueProductImage") // 🔗 Chave estrangeira única opcional
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Factory {
+  id          String   @id @default(cuid())
+  cnpj        String   @unique
+  name        String
+  address     String
+  city        String
+  state       String
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  cnpj        String   @unique
+  name        String
+  address     String
+  city        String
+  state       String
+
+  Cart Cart[]
+}
+
+model Cart {
+  id          String      @id @default(uuid())
+  total       Decimal     @db.Decimal(10, 2)
+  cartItems   CartItems[]
+  customerId  String?
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model CartItems {
+  id              String   @id @default(uuid())
+  cartId          String
+  quantity        Int
+  price           Decimal  @db.Decimal(10, 2)
+  discount        String?
+  cart            Cart     @relation(fields: [cartId], references: [id])
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+
+}
