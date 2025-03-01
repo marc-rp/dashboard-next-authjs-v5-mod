@@ -37,9 +37,12 @@ export default function CartItembox(props: CartItemBoxProps) {
   // Manipulador para mudança no dropdown de desconto
   const handleDiscountChange = (value: string) => {
     if (value === "personalizado") {
-      update?.(props.item.product, props.item.quantity, customDiscount || "");
+      // Aqui atualizamos o desconto para a string "personalizado"
+      update?.(props.item.product, props.item.quantity, "personalizado");
+      setCustomDiscount("");
     } else {
       update?.(props.item.product, props.item.quantity, value);
+      setCustomDiscount("");
     }
   };
 
@@ -47,9 +50,9 @@ export default function CartItembox(props: CartItemBoxProps) {
   const handleCustomDiscountChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newDiscount = e.target.value;
     setCustomDiscount(newDiscount);
-    if (props.item.discount === "personalizado") {
-      update?.(props.item.product, props.item.quantity, newDiscount);
-    }
+    // if (props.item.discount === "personalizado") {
+    //   update?.(props.item.product, props.item.quantity, newDiscount);
+    // }
   };
 
   // Função para salvar o novo desconto na lista
@@ -59,6 +62,12 @@ export default function CartItembox(props: CartItemBoxProps) {
       update?.(props.item.product, props.item.quantity, customDiscount);
     }
   };
+
+  // Calcula o valor com desconto (usa o customDiscount enquanto o item estiver em modo "personalizado")
+  const displayedDiscount =
+    props.item.discount === "personalizado"
+      ? customDiscount
+      : props.item.discount || "";
 
   // Função para calcular o valor com desconto
   const calculateDiscountedPrice = (
@@ -82,12 +91,18 @@ export default function CartItembox(props: CartItemBoxProps) {
   };
 
   // Calcula o valor com desconto em tempo real
+  // const discountedPrice = calculateDiscountedPrice(
+  //   Number(props.item.product.price),
+  //   props.item.quantity,
+  //   props.item.discount === "personalizado"
+  //     ? customDiscount
+  //     : props.item.discount || "",
+  // );
+
   const discountedPrice = calculateDiscountedPrice(
     Number(props.item.product.price),
     props.item.quantity,
-    props.item.discount === "personalizado"
-      ? customDiscount
-      : props.item.discount || "",
+    displayedDiscount,
   );
 
   return (
@@ -126,6 +141,17 @@ export default function CartItembox(props: CartItemBoxProps) {
               com desconto: R$ {discountedPrice.toFixed(2)}
             </span>
           )}
+          {props.item.discount === "personalizado" && (
+            <div className="flex gap-2">
+              <Input
+                className="w-24"
+                placeholder="Ex: 10%-5%"
+                value={customDiscount}
+                onChange={handleCustomDiscountChange}
+              />
+              <Button onClick={saveNewDiscount}>Salvar</Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -133,7 +159,11 @@ export default function CartItembox(props: CartItemBoxProps) {
       <div className="flex gap-2 items-center">
         <Select
           onValueChange={handleDiscountChange}
-          value={props.item.discount || ""}
+          value={
+            props.item.discount === "personalizado"
+              ? "personalizado"
+              : props.item.discount || ""
+          }
         >
           <SelectTrigger className="w-32">
             <SelectValue placeholder="Desconto" />
@@ -155,7 +185,7 @@ export default function CartItembox(props: CartItemBoxProps) {
               value={customDiscount}
               onChange={handleCustomDiscountChange}
             />
-            <Button onClick={saveNewDiscount}>Salvar</Button>
+            {/* <Button onClick={saveNewDiscount}>Salvar</Button> */}
           </div>
         )}
       </div>

@@ -106,6 +106,16 @@ export const FactorySchema = z.object({
   state: z.string().min(1, {
     message: "state is required",
   }),
+  discounts: z
+    .array(
+      z.object({
+        id: z.string(),
+        value: z
+          .string()
+          .regex(/^(\d+%(-\d+%)*)$/, "Formato inválido! Ex.: 30%-20%-10%"),
+      }),
+    )
+    .optional(),
 });
 
 export const CustomerSchema = z.object({

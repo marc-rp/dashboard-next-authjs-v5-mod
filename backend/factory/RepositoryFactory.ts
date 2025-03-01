@@ -11,13 +11,10 @@ export default class RepositoryFactory {
       return { error: "Invalid fields!" };
     }
 
-    const { id, cnpj, name, address, city, state } = validatedFields.data;
+    const { id, cnpj, name, address, city, state, discounts } =
+      validatedFields.data;
 
-    const existingFactory = await getFactoryById(id);
-
-    // const existingFactory = await prismadb.factory.findUnique({
-    //   where: { id },
-    // });
+    const existingFactory = await getFactoryById(id as string);
 
     if (existingFactory) {
       await prismadb.factory.update({
@@ -28,12 +25,14 @@ export default class RepositoryFactory {
           address,
           city,
           state,
+          discounts: discounts
+            ? discounts.map((discount) => discount.value)
+            : [],
         },
       });
 
       return { success: "Factory updated successfully!" };
     } else {
-      // Cria uma nova fábrica se não existir
       await prismadb.factory.create({
         data: {
           cnpj,
@@ -41,13 +40,15 @@ export default class RepositoryFactory {
           address,
           city,
           state,
+          discounts: discounts
+            ? discounts.map((discount) => discount.value)
+            : [],
         },
       });
 
       return { success: "Factory created successfully!" };
     }
   }
-
   static async getAllFactories(): Promise<Factory[]> {
     return await prismadb.factory.findMany();
   }

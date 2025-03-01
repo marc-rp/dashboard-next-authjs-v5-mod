@@ -115,6 +115,7 @@ model Factory {
   address     String
   city        String
   state       String
+  discounts   String[]
 }
 
 model Customer {

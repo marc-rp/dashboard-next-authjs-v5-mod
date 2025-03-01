@@ -5,4 +5,5 @@ export interface Factory {
   address: string;
   city: string;
   state: string;
+  discounts?: string[];
 }

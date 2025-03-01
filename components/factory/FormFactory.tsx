@@ -1,8 +1,8 @@
 "use client";
 
 import * as z from "zod";
-import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useState, useTransition } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FactorySchema } from "@/schemas";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Plus, X } from "lucide-react";
 
 interface FormFactoryProps {
   factory: Partial<Factory>;
@@ -54,20 +55,58 @@ export default function FormFactory(props: FormFactoryProps) {
       address: props.factory?.address ?? "",
       city: props.factory?.city ?? "",
       state: props.factory?.state ?? "",
+      discounts:
+        props.factory?.discounts?.map((discount) => ({
+          id: "",
+          value: discount,
+        })) ?? [],
     },
   });
 
+  // Sempre que props.factory mudar, atualize os valores do form
+  useEffect(() => {
+    if (props.factory) {
+      // Mapeia os descontos para o formato { id, value }
+      const discountFields =
+        props.factory.discounts?.map((discount, index) => ({
+          id: `temp-${index}`, // IDs temporários para estabilidade
+          value: discount,
+        })) || [];
+
+      form.reset({
+        id: props.factory.id ?? "",
+        cnpj: props.factory.cnpj ?? "",
+        name: props.factory.name ?? "",
+        address: props.factory.address ?? "",
+        city: props.factory.city ?? "",
+        state: props.factory.state ?? "",
+        discounts: discountFields,
+      });
+    }
+  }, [props.factory, form]);
+
+  // Correção: Adicionar tipagem explícita ao useFieldArray
+  const { fields, append, remove } = useFieldArray<
+    z.infer<typeof FactorySchema>
+  >({
+    control: form.control,
+    name: "discounts", // Ensure this matches the schema
+  });
   const onSubmit = async (values: z.infer<typeof FactorySchema>) => {
-    // props.onError(""); // Resetando erro
     props.onSuccess(""); // Resetando sucesso
 
+    // Transform discounts to string array
+    const transformedValues = {
+      ...values,
+      discounts: values.discounts?.map((discount) => discount.value) ?? [],
+    };
+
     startTransition(() => {
-      SaveFactoryState(values).then((data) => {
+      SaveFactoryState(values as Partial<Factory>).then((data) => {
         if (data?.success) {
           props.onSuccess(data?.success);
           props.save();
         } else {
-          // props.onError(data.error ?? "");
           setError(data?.error);
         }
       });
@@ -82,7 +121,6 @@ export default function FormFactory(props: FormFactoryProps) {
 
   return (
     <div className="flex justify-center items-center">
-      {/* <Card className="w-[600px] sm:ml-14"> */}
       <Card className="w-full">
         <CardHeader>
           <p className="text-2xl font-semibold text-center">
@@ -117,7 +155,7 @@ export default function FormFactory(props: FormFactoryProps) {
                           {...field}
                           disabled={isPending}
                           placeholder=""
-                          type="tex"
+                          type="text"
                         />
                       </FormControl>
                       <FormMessage />
@@ -175,6 +213,47 @@ export default function FormFactory(props: FormFactoryProps) {
                         />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="discounts"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descontos</FormLabel>
+                      {fields.map((field, index) => (
+                        <div
+                          key={field.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <FormControl>
+                            <Input
+                              type="text"
+                              {...form.register(`discounts.${index}.value`)}
+                              disabled={isPending}
+                              placeholder="Ex.: 30%-20%-10%"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => remove(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => append({ id: "", value: "" })}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Desconto
+                      </Button>
                     </FormItem>
                   )}
                 />

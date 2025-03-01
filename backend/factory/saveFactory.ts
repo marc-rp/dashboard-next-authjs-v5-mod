@@ -13,6 +13,7 @@ export default async function SaveFactoryState(factory: Partial<Factory>) {
     address: factory?.address,
     city: factory?.city,
     state: factory?.state,
+    discounts: factory?.discounts ?? [], // Now correctly receives string[]
   };
 
   return RepositoryFactory.SaveFactory(newFactory as Factory);

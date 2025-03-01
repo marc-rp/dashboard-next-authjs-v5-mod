@@ -102,6 +102,7 @@ CREATE TABLE "Factory" (
     "address" TEXT NOT NULL,
     "city" TEXT NOT NULL,
     "state" TEXT NOT NULL,
+    "discounts" TEXT[],
 
     CONSTRAINT "Factory_pkey" PRIMARY KEY ("id")
 );

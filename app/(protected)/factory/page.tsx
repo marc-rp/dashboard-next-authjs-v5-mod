@@ -33,6 +33,7 @@ const Page = () => {
         <div className="w-full">
           {factory ? (
             <FormFactory
+              key={factory.id || "new"}
               factory={factory}
               onChange={updateFactory}
               save={save}
